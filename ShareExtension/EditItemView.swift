@@ -146,6 +146,11 @@ struct EditItemView: View {
                         .background(Color.primary.opacity(0.05))
                         .cornerRadius(8)
                     }
+                } else if prop.type == "multiSelect", let options = prop.options {
+                    MultiSelectView(
+                        options: options.map { $0.name },
+                        selectedValues: multiSelectBinding(for: prop.key)
+                    )
                 } else if prop.type == "number" {
                     HStack {
                         Image(systemName: "number")
@@ -205,9 +210,100 @@ struct EditItemView: View {
             set: { itemData[key] = dateFormatter.string(from: $0) }
         )
     }
+
+    private func multiSelectBinding(for key: String) -> Binding<[String]> {
+        Binding(
+            get: {
+                if let array = itemData[key] as? [String] {
+                    return array
+                } else if let stringVal = itemData[key] as? String, !stringVal.isEmpty {
+                    // Handle comma-separated string format
+                    return stringVal.components(separatedBy: ", ").map { $0.trimmingCharacters(in: .whitespaces) }
+                }
+                return []
+            },
+            set: { itemData[key] = $0 }
+        )
+    }
 }
 
 // MARK: - Visual Components
+
+struct MultiSelectView: View {
+    let options: [String]
+    @Binding var selectedValues: [String]
+
+    var body: some View {
+        FlowLayout(spacing: 8) {
+            ForEach(options, id: \.self) { option in
+                let isSelected = selectedValues.contains(option)
+                Button(action: {
+                    if isSelected {
+                        selectedValues.removeAll { $0 == option }
+                    } else {
+                        selectedValues.append(option)
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 14))
+                        Text(option)
+                            .font(.system(size: 14))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(isSelected ? Color.blue.opacity(0.15) : Color.primary.opacity(0.05))
+                    .foregroundColor(isSelected ? .blue : .primary)
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(isSelected ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+    }
+}
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrangeSubviews(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrangeSubviews(proposal: proposal, subviews: subviews)
+        for (index, frame) in result.frames.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY), proposal: .unspecified)
+        }
+    }
+
+    private func arrangeSubviews(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
+        let maxWidth = proposal.width ?? .infinity
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+        var lineHeight: CGFloat = 0
+        var frames: [CGRect] = []
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if currentX + size.width > maxWidth && currentX > 0 {
+                currentX = 0
+                currentY += lineHeight + spacing
+                lineHeight = 0
+            }
+            frames.append(CGRect(x: currentX, y: currentY, width: size.width, height: size.height))
+            lineHeight = max(lineHeight, size.height)
+            currentX += size.width + spacing
+        }
+
+        let totalHeight = currentY + lineHeight
+        return (CGSize(width: maxWidth, height: totalHeight), frames)
+    }
+}
 
 struct GlassCard<Content: View>: View {
     let content: Content
