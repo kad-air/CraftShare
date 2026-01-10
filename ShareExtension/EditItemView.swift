@@ -172,7 +172,23 @@ struct EditItemView: View {
     
     private func binding(for key: String) -> Binding<String> {
         Binding(
-            get: { (itemData[key] as? String) ?? "" },
+            get: {
+                if let stringVal = itemData[key] as? String {
+                    return stringVal
+                } else if let numVal = itemData[key] as? NSNumber {
+                    return numVal.stringValue
+                } else if let doubleVal = itemData[key] as? Double {
+                    // Check if it's an integer (e.g. 5.0 -> "5")
+                    if floor(doubleVal) == doubleVal {
+                        return String(format: "%.0f", doubleVal)
+                    } else {
+                        return String(doubleVal)
+                    }
+                } else if let intVal = itemData[key] as? Int {
+                    return String(intVal)
+                }
+                return ""
+            },
             set: { itemData[key] = $0 }
         )
     }
