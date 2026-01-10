@@ -31,9 +31,7 @@ class ShareViewController: UIViewController {
     /// Extracts a URL from attachments, trying multiple type identifiers
     /// YouTube and some apps share URLs as plain text instead of URL type
     private func extractURL(from attachments: [NSItemProvider], completion: @escaping (URL?) -> Void) {
-        // Priority order: URL type first, then plain text
         let urlType = UTType.url.identifier
-        let textType = UTType.plainText.identifier
 
         // Try URL type first
         if let provider = attachments.first(where: { $0.hasItemConformingToTypeIdentifier(urlType) }) {
