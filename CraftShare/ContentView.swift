@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Combine
 
 struct ContentView: View {
@@ -168,53 +169,6 @@ struct ContentView: View {
                     }
                     .padding()
                 }
-            }
-        }
-    }
-}
-
-// Reuse the visual components from the other view (duplicated here since they are in different modules/files)
-// In a real app, you'd move these to a shared DesignSystem file.
-
-struct GlassCard<Content: View>: View {
-    let content: Content
-    
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-    
-    var body: some View {
-        content
-            .padding(24)
-            .background(.ultraThinMaterial)
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 10)
-    }
-}
-
-struct MeshGradientBackground: View {
-    var body: some View {
-        ZStack {
-            Color(UIColor.systemGroupedBackground) // Base
-            
-            GeometryReader { proxy in
-                Circle()
-                    .fill(Color.blue.opacity(0.2))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 60)
-                    .offset(x: -50, y: -100)
-                
-                Circle()
-                    .fill(Color.purple.opacity(0.2))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 60)
-                    .offset(x: proxy.size.width - 200, y: proxy.size.height / 3)
-                
-                Circle()
-                    .fill(Color.orange.opacity(0.15))
-                    .frame(width: 250, height: 250)
-                    .blur(radius: 50)
-                    .offset(x: 50, y: proxy.size.height - 200)
             }
         }
     }

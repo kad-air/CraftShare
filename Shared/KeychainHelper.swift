@@ -3,47 +3,63 @@ import Security
 
 class KeychainHelper {
     static let shared = KeychainHelper()
-    
+
     // IMPORTANT: This must match your "Keychain Sharing" group in Xcode
-    // Format: "AppIdentifierPrefix.group.kad-air.CraftShare" or just the group name depending on setup.
-    // For simplicity, we usually just pass the access group during the query if strictly needed,
-    // but often just having the entitlement is enough for the system to group them if we don't specify strict ACLs.
-    // We will use a generic save/load that relies on the shared entitlement group.
-    
-    func save(_ value: String, service: String, account: String) {
-        guard let data = value.data(using: .utf8) else { return }
-        
+    // This access group enables credential sharing between the main app and share extension
+    private let accessGroup = "group.kad-air.CraftShare"
+
+    @discardableResult
+    func save(_ value: String, service: String, account: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
+
+        // First delete any existing item
+        delete(service: service, account: account)
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            kSecAttrAccessGroup as String: accessGroup,
             kSecValueData as String: data,
-            // This ensures it's available even when device is locked (optional, but good for background extensions)
+            // This ensures it's available even when device is locked (good for background extensions)
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
-        
-        // Delete existing item first
-        SecItemDelete(query as CFDictionary)
-        
+
         // Add new item
-        SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
     }
-    
+
     func read(service: String, account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            kSecAttrAccessGroup as String: accessGroup,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
-        
+
         var dataTypeRef: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &dataTypeRef)
-        
+
         if status == errSecSuccess, let data = dataTypeRef as? Data {
             return String(data: data, encoding: .utf8)
         }
         return nil
+    }
+
+    @discardableResult
+    func delete(service: String, account: String) -> Bool {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrAccessGroup as String: accessGroup
+        ]
+
+        let status = SecItemDelete(query as CFDictionary)
+        // Return true if item was deleted or didn't exist
+        return status == errSecSuccess || status == errSecItemNotFound
     }
 }

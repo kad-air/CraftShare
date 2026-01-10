@@ -9,20 +9,20 @@ CraftShare is an iOS Share Extension that saves web pages to Craft Collections u
 ## Build Commands
 
 ```bash
-# Build main app (Debug)
-xcodebuild -scheme CraftShare -configuration Debug build
+# Build main app (Debug) - ALWAYS use iPhone 17 simulator
+xcodebuild -scheme CraftShare -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' build
 
 # Build main app (Release)
-xcodebuild -scheme CraftShare -configuration Release build
+xcodebuild -scheme CraftShare -configuration Release -destination 'platform=iOS Simulator,name=iPhone 17' build
 
 # Build share extension
-xcodebuild -scheme ShareExtension -configuration Debug build
+xcodebuild -scheme ShareExtension -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' build
 
 # Clean build
 xcodebuild -scheme CraftShare clean
 ```
 
-Note: For device builds, add `-destination 'platform=iOS,name=<device>'`. For simulator: `-destination 'platform=iOS Simulator,name=iPhone 16'`.
+**IMPORTANT:** Always use `-destination 'platform=iOS Simulator,name=iPhone 17'` for all debug/test builds. Do NOT use iPhone 16.
 
 ## Architecture
 
@@ -34,6 +34,25 @@ The app has two targets that share code via the `Shared/` directory:
 2. **ShareExtension** - The share sheet UI invoked from Safari
 
 Both targets must include all files from `Shared/` in their target membership.
+
+### Adding New Shared Files to Targets
+
+When creating new files in `Shared/`, you MUST add them to both targets in Xcode:
+
+1. Select the file in Xcode's Project Navigator
+2. Open the File Inspector (right panel)
+3. Under "Target Membership", check both:
+   - ☑ CraftShare
+   - ☑ ShareExtension
+
+**Current Shared Files (all need both targets):**
+- `APIError.swift` - Unified error types
+- `CraftAPI.swift` - Craft API client
+- `CredentialsManager.swift` - Credential storage
+- `DesignSystem.swift` - Shared UI components (GlassCard, MeshGradientBackground, FlowLayout, MultiSelectView)
+- `GeminiAPI.swift` - Gemini AI client
+- `KeychainHelper.swift` - Keychain wrapper
+- `NetworkConfig.swift` - URLSession configuration
 
 ### Data Sharing Between Targets
 
