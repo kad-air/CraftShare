@@ -22,7 +22,7 @@ xcodebuild -scheme ShareExtension -configuration Debug build
 xcodebuild -scheme CraftShare clean
 ```
 
-Note: For device builds, add `-destination 'platform=iOS,name=<device>'`. For simulator: `-destination 'platform=iOS Simulator,name=iPhone 15'`.
+Note: For device builds, add `-destination 'platform=iOS,name=<device>'`. For simulator: `-destination 'platform=iOS Simulator,name=iPhone 16'`.
 
 ## Architecture
 
@@ -37,7 +37,7 @@ Both targets must include all files from `Shared/` in their target membership.
 
 ### Data Sharing Between Targets
 
-- **App Groups** (`group.kad-air.CraftShare`): Enables UserDefaults sharing between main app and extension
+- **App Groups**: Enables UserDefaults sharing between main app and extension
 - **Keychain Access Group**: Shares sensitive credentials (API tokens) between targets
 - Configuration in `CredentialsManager.swift` - update `suiteName` if changing the App Group ID
 
@@ -50,17 +50,83 @@ Both targets must include all files from `Shared/` in their target membership.
 5. `EditItemView` lets user review/edit extracted data
 6. `CraftAPI.createItem()` saves to Craft, then `addInitialDocumentContent()` adds URL preview block
 
-### API Integrations
-
-- **Craft Docs API** (`CraftAPI.swift`): Collections, schemas, item creation, document blocks
-- **Gemini API** (`GeminiAPI.swift`): Uses `gemini-2.5-flash-lite` model for content extraction
-
 ### Credential Storage
 
 - Sensitive (Craft token, Gemini key): iOS Keychain via `KeychainHelper`
 - Non-sensitive (Space ID, user guidance): UserDefaults via App Groups
 
+## Craft API Reference
+
+Base URL pattern: `https://connect.craft.do/links/{spaceId}/api/v1`
+Auth: Bearer token in `Authorization` header
+
+### Key Endpoints Used
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/collections` | GET | List all collections in space |
+| `/collections/{id}/schema?format=schema` | GET | Get collection schema with property definitions |
+| `/collections/{id}/items` | POST | Create new collection item |
+| `/blocks` | POST | Add content blocks (richUrl, image) to a document |
+
+### Schema Response Format
+
+```json
+{
+  "contentPropDetails": { "key": "title", "name": "Title" },
+  "properties": [
+    { "key": "status", "name": "Status", "type": "select", "options": [{"name": "Todo"}, {"name": "Done"}] },
+    { "key": "dueDate", "name": "Due Date", "type": "date" }
+  ]
+}
+```
+
 ### Schema Property Types
 
-The Craft schema supports: `text`, `date` (YYYY-MM-DD format), `singleSelect`, `multiSelect`, `number`, `url`, `image`. The `EditItemView` renders appropriate controls for each type:
-- `multiSelect`: Displays toggleable chips using `FlowLayout` for wrapping; stores values as `[String]` array
+Supported types: `text`, `date` (YYYY-MM-DD), `select`/`singleSelect`, `multiSelect`, `number`, `url`, `image`
+
+The `EditItemView` renders appropriate controls for each type:
+- `multiSelect`: Toggleable chips using `FlowLayout`; stores values as `[String]` array
+
+### Creating Collection Items
+
+Craft expects a nested structure - the content key (e.g., `title`) at top level, other fields inside `properties`:
+
+```json
+{
+  "items": [{
+    "title": "Page Title",
+    "properties": {
+      "status": "Todo",
+      "dueDate": "2025-01-15"
+    }
+  }]
+}
+```
+
+Note: `CraftAPI.createItem()` restructures flat Gemini output into this nested format.
+
+### Adding Document Content
+
+After creating an item, `addInitialDocumentContent()` adds blocks to the document:
+
+```json
+{
+  "blocks": [
+    { "type": "richUrl", "url": "https://..." },
+    { "type": "image", "url": "https://...", "markdown": "![](url)" }
+  ],
+  "position": { "position": "end", "pageId": "{document-id}" }
+}
+```
+
+## Gemini API
+
+Uses `gemini-2.5-flash-lite` model via `https://generativelanguage.googleapis.com/v1beta/models/`
+
+The prompt includes:
+- Schema description with property types and options
+- The content key field name (required in output)
+- Suggested image URL from OG metadata
+- User guidance text (configurable in settings)
+- Truncated webpage content (first 100k chars)
