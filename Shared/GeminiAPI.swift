@@ -39,6 +39,9 @@ class GeminiAPI {
             return desc
         }.joined(separator: "\n")
 
+        // Get URL-specific extraction hints
+        let siteHints = Self.extractionHints(for: url)
+
         let promptText = """
         I have a Craft Document Collection with the following schema:
         \(schemaDescription)
@@ -47,7 +50,7 @@ class GeminiAPI {
 
         SUGGESTED IMAGE URL: \(suggestedImageUrl)
         (If the schema has a field of type 'image', 'url' or named 'Cover'/'Image', please populate it with this URL).
-
+        \(siteHints)
         I want you to extract information from the following webpage text and map it to a single JSON object that fits this schema.
 
         USER GUIDANCE:
@@ -151,5 +154,74 @@ class GeminiAPI {
         }
 
         return message.isEmpty ? nil : message
+    }
+
+    /// Returns URL-specific extraction hints to help Gemini focus on the right content
+    private static func extractionHints(for urlString: String) -> String {
+        let lowercased = urlString.lowercased()
+
+        // YouTube - focus on the main video, not recommendations
+        if lowercased.contains("youtube.com") || lowercased.contains("youtu.be") {
+            return """
+
+            IMPORTANT - YOUTUBE VIDEO PAGE:
+            This is a YouTube video page. Extract information ONLY about the PRIMARY video being watched.
+            - The video ID is in the URL (e.g., v=XXXXX or youtu.be/XXXXX)
+            - Use the og:title or the main <title> tag for the video title
+            - IGNORE all "recommended videos", "up next", playlist suggestions, and sidebar content
+            - The channel name is the video's uploader/creator
+            - Look for the video description in the primary content area, not comments
+            """
+        }
+
+        // Vimeo
+        if lowercased.contains("vimeo.com") {
+            return """
+
+            IMPORTANT - VIMEO VIDEO PAGE:
+            This is a Vimeo video page. Extract information ONLY about the PRIMARY video.
+            - IGNORE any related or recommended videos
+            - Focus on the main video title, creator, and description
+            """
+        }
+
+        // Twitter/X - focus on the specific tweet
+        if lowercased.contains("twitter.com") || lowercased.contains("x.com") {
+            return """
+
+            IMPORTANT - TWITTER/X POST:
+            This is a Twitter/X post. Extract information about the SPECIFIC tweet/post in the URL.
+            - IGNORE replies, quoted tweets in the thread, and recommended content
+            - Focus on the main post's author and content
+            """
+        }
+
+        // Reddit - focus on the specific post
+        if lowercased.contains("reddit.com") {
+            return """
+
+            IMPORTANT - REDDIT POST:
+            This is a Reddit post. Extract information about the SPECIFIC post in the URL.
+            - IGNORE comments, sidebar content, and recommended posts
+            - Focus on the post title, author, subreddit, and post content
+            """
+        }
+
+        // News articles - focus on the article, not ads/related
+        if lowercased.contains("news") || lowercased.contains("article") ||
+           lowercased.contains("nytimes.com") || lowercased.contains("washingtonpost.com") ||
+           lowercased.contains("theguardian.com") || lowercased.contains("bbc.") ||
+           lowercased.contains("cnn.com") || lowercased.contains("reuters.com") {
+            return """
+
+            IMPORTANT - NEWS ARTICLE:
+            This is a news article. Extract information about the PRIMARY article only.
+            - IGNORE related articles, advertisements, and sidebar content
+            - Focus on the headline, author, publication date, and main article body
+            """
+        }
+
+        // No specific hints for other URLs
+        return ""
     }
 }
