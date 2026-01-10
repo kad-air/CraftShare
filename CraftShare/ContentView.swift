@@ -7,6 +7,8 @@ struct ContentView: View {
     @AppStorage("isOnboardingComplete") private var isOnboardingComplete = false
     @State private var showSavedMessage = false
     @State private var showOnboardingSheet = false
+    @State private var showCraftToken = false
+    @State private var showGeminiKey = false
     
     var body: some View {
         if !isOnboardingComplete {
@@ -62,13 +64,26 @@ struct ContentView: View {
                                         Text("Token")
                                             .font(.caption)
                                             .frame(width: 50, alignment: .leading)
-                                        TextField("sk_...", text: $credentials.craftToken)
+                                        HStack {
+                                            Group {
+                                                if showCraftToken {
+                                                    TextField("sk_...", text: $credentials.craftToken)
+                                                } else {
+                                                    SecureField("sk_...", text: $credentials.craftToken)
+                                                }
+                                            }
                                             .textFieldStyle(.plain)
                                             .textInputAutocapitalization(.never)
                                             .autocorrectionDisabled()
-                                            .padding(10)
-                                            .background(Color.primary.opacity(0.05))
-                                            .cornerRadius(10)
+
+                                            Button(action: { showCraftToken.toggle() }) {
+                                                Image(systemName: showCraftToken ? "eye.slash" : "eye")
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        .padding(10)
+                                        .background(Color.primary.opacity(0.05))
+                                        .cornerRadius(10)
                                     }
                                     
                                     HStack {
@@ -95,13 +110,26 @@ struct ContentView: View {
                                         Text("API Key")
                                             .font(.caption)
                                             .frame(width: 50, alignment: .leading)
-                                        TextField("AIza...", text: $credentials.geminiKey)
+                                        HStack {
+                                            Group {
+                                                if showGeminiKey {
+                                                    TextField("AIza...", text: $credentials.geminiKey)
+                                                } else {
+                                                    SecureField("AIza...", text: $credentials.geminiKey)
+                                                }
+                                            }
                                             .textFieldStyle(.plain)
                                             .textInputAutocapitalization(.never)
                                             .autocorrectionDisabled()
-                                            .padding(10)
-                                            .background(Color.primary.opacity(0.05))
-                                            .cornerRadius(10)
+
+                                            Button(action: { showGeminiKey.toggle() }) {
+                                                Image(systemName: showGeminiKey ? "eye.slash" : "eye")
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        .padding(10)
+                                        .background(Color.primary.opacity(0.05))
+                                        .cornerRadius(10)
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 4) {
