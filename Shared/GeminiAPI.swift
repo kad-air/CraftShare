@@ -162,14 +162,18 @@ class GeminiAPI {
 
         // YouTube - focus on the main video, not recommendations
         if lowercased.contains("youtube.com") || lowercased.contains("youtu.be") {
+            let videoId = extractYouTubeVideoId(from: urlString)
+            let videoIdHint = videoId.map { "- The VIDEO ID we want is: \($0)" } ?? ""
             return """
 
             IMPORTANT - YOUTUBE VIDEO PAGE:
             This is a YouTube video page. Extract information ONLY about the PRIMARY video being watched.
-            - The video ID is in the URL (e.g., v=XXXXX or youtu.be/XXXXX)
-            - Use the og:title or the main <title> tag for the video title
-            - IGNORE all "recommended videos", "up next", playlist suggestions, and sidebar content
-            - The channel name is the video's uploader/creator
+            \(videoIdHint)
+            - Use ONLY the og:title meta tag or the main <title> tag for the video title
+            - The title often ends with " - YouTube" which you should remove
+            - IGNORE ALL "recommended videos", "up next", playlist suggestions, related videos, and sidebar content
+            - IGNORE any video titles that appear in lists or grids - these are recommendations
+            - The channel name is the video's uploader/creator (look for the channel link near the video)
             - Look for the video description in the primary content area, not comments
             """
         }
@@ -223,5 +227,34 @@ class GeminiAPI {
 
         // No specific hints for other URLs
         return ""
+    }
+
+    /// Extracts YouTube video ID from various URL formats
+    private static func extractYouTubeVideoId(from urlString: String) -> String? {
+        // Handle youtu.be/VIDEO_ID
+        if let range = urlString.range(of: "youtu.be/([a-zA-Z0-9_-]{11})", options: .regularExpression) {
+            let match = String(urlString[range])
+            return String(match.dropFirst(9)) // Remove "youtu.be/"
+        }
+
+        // Handle youtube.com/watch?v=VIDEO_ID
+        if let range = urlString.range(of: "[?&]v=([a-zA-Z0-9_-]{11})", options: .regularExpression) {
+            let match = String(urlString[range])
+            return String(match.dropFirst(3)) // Remove "?v=" or "&v="
+        }
+
+        // Handle youtube.com/shorts/VIDEO_ID
+        if let range = urlString.range(of: "/shorts/([a-zA-Z0-9_-]{11})", options: .regularExpression) {
+            let match = String(urlString[range])
+            return String(match.dropFirst(8)) // Remove "/shorts/"
+        }
+
+        // Handle youtube.com/embed/VIDEO_ID
+        if let range = urlString.range(of: "/embed/([a-zA-Z0-9_-]{11})", options: .regularExpression) {
+            let match = String(urlString[range])
+            return String(match.dropFirst(7)) // Remove "/embed/"
+        }
+
+        return nil
     }
 }
