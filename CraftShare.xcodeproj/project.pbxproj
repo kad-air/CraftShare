@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B974D8F32F12E02E002872E5 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B974D8F12F12E02E002872E5 /* DesignSystem.swift */; };
+		B974D8F42F12E02E002872E5 /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B974D8F22F12E02E002872E5 /* NetworkConfig.swift */; };
+		B974D8F52F12E02E002872E5 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B974D8F02F12E02E002872E5 /* APIError.swift */; };
+		B974D8F62F12E02E002872E5 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B974D8F12F12E02E002872E5 /* DesignSystem.swift */; };
+		B974D8F72F12E02E002872E5 /* NetworkConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B974D8F22F12E02E002872E5 /* NetworkConfig.swift */; };
+		B974D8F82F12E02E002872E5 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B974D8F02F12E02E002872E5 /* APIError.swift */; };
 		B999A9C02F11F76F00239EFE /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B999A9B62F11F76F00239EFE /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B9C082212F120234005A9233 /* GeminiAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C0821F2F120234005A9233 /* GeminiAPI.swift */; };
 		B9C082222F120234005A9233 /* CraftAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C0821D2F120234005A9233 /* CraftAPI.swift */; };
@@ -43,6 +49,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B974D8F02F12E02E002872E5 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		B974D8F12F12E02E002872E5 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		B974D8F22F12E02E002872E5 /* NetworkConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConfig.swift; sourceTree = "<group>"; };
 		B999A9A22F11F71900239EFE /* CraftShare.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CraftShare.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B999A9B62F11F76F00239EFE /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9C0821D2F120234005A9233 /* CraftAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CraftAPI.swift; sourceTree = "<group>"; };
@@ -127,6 +136,9 @@
 		B9C082202F120234005A9233 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				B974D8F02F12E02E002872E5 /* APIError.swift */,
+				B974D8F12F12E02E002872E5 /* DesignSystem.swift */,
+				B974D8F22F12E02E002872E5 /* NetworkConfig.swift */,
 				B9C082292F1217C9005A9233 /* KeychainHelper.swift */,
 				B9C0821D2F120234005A9233 /* CraftAPI.swift */,
 				B9C0821E2F120234005A9233 /* CredentialsManager.swift */,
@@ -248,6 +260,9 @@
 				B9C082242F120234005A9233 /* GeminiAPI.swift in Sources */,
 				B9C082252F120234005A9233 /* CraftAPI.swift in Sources */,
 				B9C082262F120234005A9233 /* CredentialsManager.swift in Sources */,
+				B974D8F32F12E02E002872E5 /* DesignSystem.swift in Sources */,
+				B974D8F42F12E02E002872E5 /* NetworkConfig.swift in Sources */,
+				B974D8F52F12E02E002872E5 /* APIError.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,6 +274,9 @@
 				B9C082222F120234005A9233 /* CraftAPI.swift in Sources */,
 				B9C0822A2F1217C9005A9233 /* KeychainHelper.swift in Sources */,
 				B9C082232F120234005A9233 /* CredentialsManager.swift in Sources */,
+				B974D8F62F12E02E002872E5 /* DesignSystem.swift in Sources */,
+				B974D8F72F12E02E002872E5 /* NetworkConfig.swift in Sources */,
+				B974D8F82F12E02E002872E5 /* APIError.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
