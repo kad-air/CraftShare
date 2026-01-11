@@ -277,7 +277,60 @@ class ShareViewModel: ObservableObject {
                     finalItem.removeValue(forKey: key)
                 }
             }
-            // 2. Handle Dates: Ensure YYYY-MM-DD format
+            // 2. Handle Select fields: Validate against allowed options
+            else if prop.type == "select" || prop.type == "singleSelect" {
+                if let strVal = value as? String, let options = prop.options {
+                    let validOptions = options.map { $0.name }
+                    if !validOptions.contains(strVal) {
+                        // Try case-insensitive match
+                        if let match = validOptions.first(where: { $0.lowercased() == strVal.lowercased() }) {
+                            finalItem[key] = match
+                        } else {
+                            finalItem.removeValue(forKey: key)
+                        }
+                    }
+                } else if value == nil || value is NSNull || (value as? String)?.isEmpty == true {
+                    finalItem.removeValue(forKey: key)
+                }
+            }
+            // 3. Handle MultiSelect fields: Filter to valid options only
+            else if prop.type == "multiSelect" {
+                if let options = prop.options {
+                    let validOptions = options.map { $0.name }
+                    let validOptionsLower = validOptions.map { $0.lowercased() }
+
+                    var validValues: [String] = []
+
+                    // Handle array of strings
+                    if let arrayVal = value as? [String] {
+                        for val in arrayVal {
+                            if validOptions.contains(val) {
+                                validValues.append(val)
+                            } else if let idx = validOptionsLower.firstIndex(of: val.lowercased()) {
+                                // Case-insensitive match - use the correct casing
+                                validValues.append(validOptions[idx])
+                            }
+                        }
+                    }
+                    // Handle single string (Gemini sometimes returns string instead of array)
+                    else if let strVal = value as? String {
+                        if validOptions.contains(strVal) {
+                            validValues.append(strVal)
+                        } else if let idx = validOptionsLower.firstIndex(of: strVal.lowercased()) {
+                            validValues.append(validOptions[idx])
+                        }
+                    }
+
+                    if validValues.isEmpty {
+                        finalItem.removeValue(forKey: key)
+                    } else {
+                        finalItem[key] = validValues
+                    }
+                } else {
+                    finalItem.removeValue(forKey: key)
+                }
+            }
+            // 4. Handle Dates: Ensure YYYY-MM-DD format
             else if prop.type == "date", let strVal = value as? String {
                 if craftDateFormatter.date(from: strVal) == nil {
                     // Try to parse natural date (e.g. "Oct 5, 2023")
@@ -291,11 +344,11 @@ class ShareViewModel: ObservableObject {
                     }
                 }
             }
-            // 3. Remove empty strings for other optional fields
+            // 5. Remove empty strings for other optional fields
             else if let strVal = value as? String, strVal.isEmpty {
                 finalItem.removeValue(forKey: key)
             }
-            // 4. Remove actual Nulls
+            // 6. Remove actual Nulls
             else if value is NSNull {
                 finalItem.removeValue(forKey: key)
             }
