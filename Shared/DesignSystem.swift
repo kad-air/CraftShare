@@ -10,21 +10,26 @@ import UIKit
 
 // MARK: - Glass Effect Modifier
 
-/// A view modifier that conditionally applies iOS 26 glass effect.
-struct ConditionalGlassModifier: ViewModifier {
+/// A view modifier that applies iOS 26 glass effect, or falls back to material background on older versions.
+struct GlassContainerModifier: ViewModifier {
+    var cornerRadius: CGFloat = 20
+
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect()
+            content
+                .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
         } else {
             content
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
     }
 }
 
 extension View {
-    /// Applies glass effect on iOS 26+, no-op on earlier versions.
-    func conditionalGlassEffect() -> some View {
-        modifier(ConditionalGlassModifier())
+    /// Applies glass container styling - uses .glassEffect() on iOS 26+, material background on older versions.
+    func glassContainer(cornerRadius: CGFloat = 20) -> some View {
+        modifier(GlassContainerModifier(cornerRadius: cornerRadius))
     }
 }
 
@@ -48,9 +53,7 @@ struct GlassCard<Content: View>: View {
     var body: some View {
         content
             .padding(padding)
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .conditionalGlassEffect()
+            .glassContainer(cornerRadius: 20)
     }
 }
 
@@ -186,9 +189,7 @@ struct LiquidGlassButtonStyle: ButtonStyle {
             .foregroundColor(.primary)
             .frame(maxWidth: .infinity)
             .padding()
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .conditionalGlassEffect()
+            .glassContainer(cornerRadius: 16)
             .opacity(configuration.isPressed ? 0.8 : 1.0)
     }
 }
