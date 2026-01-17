@@ -75,10 +75,9 @@ struct OnboardingStep: View {
             
             Image(systemName: image)
                 .font(.system(size: 80))
-                .foregroundStyle(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .foregroundStyle(.tint)
                 .padding()
-                .background(.ultraThinMaterial, in: Circle())
-                .shadow(radius: 10)
+                .background(.regularMaterial, in: Circle())
             
             VStack(spacing: 16) {
                 Text(title)
@@ -98,11 +97,7 @@ struct OnboardingStep: View {
                         Text(linkTitle)
                         Image(systemName: "arrow.up.right")
                     }
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(12)
+                    .fontWeight(.semibold)
                 }
             }
             
@@ -111,15 +106,10 @@ struct OnboardingStep: View {
             if isLastStep {
                 Button(action: { onComplete?() }) {
                     Text("Get Started")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(16)
-                        .shadow(radius: 5)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
             } else {

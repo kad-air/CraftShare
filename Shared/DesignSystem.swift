@@ -2,16 +2,36 @@
 //  DesignSystem.swift
 //  CraftShare
 //
-//  Consolidated UI components shared between the main app and share extension.
+//  iOS 26 Liquid Glass design system components.
 //
 
 import SwiftUI
 import UIKit
 
+// MARK: - Glass Effect Modifier
+
+/// A view modifier that conditionally applies iOS 26 glass effect.
+struct ConditionalGlassModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect()
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    /// Applies glass effect on iOS 26+, no-op on earlier versions.
+    func conditionalGlassEffect() -> some View {
+        modifier(ConditionalGlassModifier())
+    }
+}
+
 // MARK: - GlassCard
 
-/// A container view with glass morphism styling (frosted glass effect).
-/// Use this to wrap content in a visually distinct card with subtle shadow.
+/// A container view with iOS 26 Liquid Glass styling.
+/// Uses .glassEffect() for authentic glass appearance with specular highlights on iOS 26+.
 struct GlassCard<Content: View>: View {
     let content: Content
     let padding: CGFloat
@@ -28,43 +48,29 @@ struct GlassCard<Content: View>: View {
     var body: some View {
         content
             .padding(padding)
-            .background(.ultraThinMaterial)
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 10)
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .conditionalGlassEffect()
     }
 }
 
-// MARK: - MeshGradientBackground
+// MARK: - LiquidGlassBackground
 
-/// A decorative background with blurred gradient circles creating a liquid/mesh effect.
-/// Adapts to the container size using GeometryReader.
+/// A clean, minimal background for iOS 26 Liquid Glass aesthetic.
+/// Uses system background colors without colorful gradient orbs.
+struct LiquidGlassBackground: View {
+    var body: some View {
+        Color(UIColor.systemBackground)
+    }
+}
+
+// MARK: - MeshGradientBackground (Deprecated - kept for compatibility)
+
+/// Deprecated: Use LiquidGlassBackground instead.
+/// Now renders as a clean system background for iOS 26 Liquid Glass aesthetic.
 struct MeshGradientBackground: View {
     var body: some View {
-        ZStack {
-            // Base background color
-            Color(UIColor.systemGroupedBackground)
-
-            // Gradient orbs
-            GeometryReader { proxy in
-                Circle()
-                    .fill(Color.blue.opacity(0.2))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 60)
-                    .offset(x: -50, y: -100)
-
-                Circle()
-                    .fill(Color.purple.opacity(0.2))
-                    .frame(width: 300, height: 300)
-                    .blur(radius: 60)
-                    .offset(x: proxy.size.width - 200, y: proxy.size.height / 3)
-
-                Circle()
-                    .fill(Color.orange.opacity(0.15))
-                    .frame(width: 250, height: 250)
-                    .blur(radius: 50)
-                    .offset(x: 50, y: proxy.size.height - 200)
-            }
-        }
+        Color(UIColor.systemBackground)
     }
 }
 
@@ -125,7 +131,7 @@ struct FlowLayout: Layout {
 
 // MARK: - MultiSelectView
 
-/// A toggleable chip selector for multi-select fields.
+/// A toggleable chip selector for multi-select fields with Liquid Glass styling.
 /// Displays options as tappable chips that can be selected or deselected.
 struct MultiSelectView: View {
     let options: [String]
@@ -159,32 +165,50 @@ struct MultiSelectView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(isSelected ? Color.blue.opacity(0.15) : Color.primary.opacity(0.05))
-                    .foregroundColor(isSelected ? .blue : .primary)
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(isSelected ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 1)
-                    )
+                    .background(isSelected ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.04))
+                    .foregroundColor(isSelected ? .accentColor : .primary)
+                    .clipShape(Capsule())
                 }
-                .buttonStyle(PlainButtonStyle())
+                .buttonStyle(.plain)
             }
         }
     }
+}
+
+// MARK: - Liquid Glass Button Style
+
+/// A button style that applies iOS 26 Liquid Glass appearance.
+struct LiquidGlassButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(.primary)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .conditionalGlassEffect()
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+    }
+}
+
+extension ButtonStyle where Self == LiquidGlassButtonStyle {
+    static var liquidGlass: LiquidGlassButtonStyle { LiquidGlassButtonStyle() }
 }
 
 // MARK: - Previews
 
 #Preview("GlassCard") {
     ZStack {
-        MeshGradientBackground()
+        LiquidGlassBackground()
             .ignoresSafeArea()
 
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Glass Card Preview")
                     .font(.headline)
-                Text("This is a sample card with glass morphism styling.")
+                Text("iOS 26 Liquid Glass styling.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -193,8 +217,8 @@ struct MultiSelectView: View {
     }
 }
 
-#Preview("MeshGradientBackground") {
-    MeshGradientBackground()
+#Preview("LiquidGlassBackground") {
+    LiquidGlassBackground()
         .ignoresSafeArea()
 }
 
@@ -204,8 +228,8 @@ struct MultiSelectView: View {
             Text(tag)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(8)
+                .background(Color.primary.opacity(0.06))
+                .clipShape(Capsule())
         }
     }
     .padding()

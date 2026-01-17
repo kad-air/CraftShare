@@ -27,8 +27,8 @@ struct ContentView: View {
                             HStack(spacing: 15) {
                                 Image(systemName: "square.and.arrow.up.circle.fill")
                                     .font(.system(size: 40))
-                                    .foregroundStyle(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                
+                                    .foregroundStyle(.tint)
+
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("CraftShare")
                                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -37,11 +37,10 @@ struct ContentView: View {
                                         .foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                
+
                                 Button(action: { showOnboardingSheet = true }) {
                                     Image(systemName: "questionmark.circle")
                                         .font(.title2)
-                                        .foregroundColor(.blue)
                                 }
                             }
                             .padding(.horizontal)
@@ -160,7 +159,7 @@ struct ContentView: View {
                                 
                                 Button(action: {
                                     // Trigger a save
-                                    credentials.objectWillChange.send() 
+                                    credentials.objectWillChange.send()
                                     // Hide Keyboard
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                     // Show confirmation
@@ -171,15 +170,9 @@ struct ContentView: View {
                                     }
                                 }) {
                                     Text("Save Settings")
-                                        .font(.headline)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(Color.blue)
-                                        .cornerRadius(16)
-                                        .shadow(radius: 5)
                                 }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.large)
                                 .padding(.horizontal)
                                 
                                 if credentials.isValid {

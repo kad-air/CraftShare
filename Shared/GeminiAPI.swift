@@ -53,6 +53,8 @@ class GeminiAPI {
         \(siteHints)
         I want you to extract information from the following webpage text and map it to a single JSON object that fits this schema.
 
+        CRITICAL: Return a SINGLE JSON object, NEVER an array. Even if the page describes multiple items, seasons, episodes, or entries, consolidate all information into ONE object representing the main/primary item.
+
         USER GUIDANCE:
         \(userGuidance)
 
@@ -60,7 +62,7 @@ class GeminiAPI {
         Webpage Content:
         \(pageContent.prefix(100000))
 
-        Return ONLY valid JSON. The keys in the JSON must match the schema keys exactly.
+        Return ONLY valid JSON (a single object, not an array). The keys in the JSON must match the schema keys exactly.
         For 'select' types, try to pick the best option if known, or infer a value.
         """
 
@@ -119,11 +121,23 @@ class GeminiAPI {
                 .replacingOccurrences(of: "```", with: "")
                 .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
 
-            if let jsonData = cleanedText.data(using: String.Encoding.utf8),
-               let item = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
-                return item
-            } else {
+            if let jsonData = cleanedText.data(using: String.Encoding.utf8) {
+                let parsed = try? JSONSerialization.jsonObject(with: jsonData)
+
+                // Handle single object response (expected)
+                if let item = parsed as? [String: Any] {
+                    return item
+                }
+
+                // Handle array response - take first element only
+                if let array = parsed as? [[String: Any]], let firstItem = array.first {
+                    print("[GeminiAPI] Warning: Received array response, using first element only")
+                    return firstItem
+                }
+
                 throw APIError.decodingError("Gemini returned invalid JSON: \(cleanedText.prefix(200))...")
+            } else {
+                throw APIError.decodingError("Failed to encode Gemini response as UTF-8")
             }
         }
 

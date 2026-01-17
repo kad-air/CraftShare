@@ -63,11 +63,14 @@ When creating new files in `Shared/`, you MUST add them to both targets in Xcode
 ### Core Data Flow (Share Extension)
 
 1. `ShareViewController` captures URL from Safari share sheet
-2. `ShareView` fetches Craft collections and their schemas via `CraftAPI`
-3. User selects a collection → schema is fetched
-4. `GeminiAPI` receives webpage content + schema → returns structured JSON matching schema fields
-5. `EditItemView` lets user review/edit extracted data
-6. `CraftAPI.createItem()` saves to Craft, then `addInitialDocumentContent()` adds URL preview block
+2. `ShareViewModel` orchestrates the entire flow (MVVM pattern with `@MainActor`)
+3. `ShareView` fetches Craft collections and their schemas via `CraftAPI`
+4. User selects a collection → schema is fetched
+5. `GeminiAPI` receives webpage content + schema → returns structured JSON matching schema fields
+6. `EditItemView` lets user review/edit extracted data
+7. `CraftAPI.createItem()` saves to Craft, then `addInitialDocumentContent()` adds URL preview block
+
+The `ShareViewModel` handles task cancellation properly via `currentTask?.cancel()` to prevent race conditions when users switch collections.
 
 ### Credential Storage
 
@@ -78,6 +81,8 @@ When creating new files in `Shared/`, you MUST add them to both targets in Xcode
 
 Base URL pattern: `https://connect.craft.do/links/{spaceId}/api/v1`
 Auth: Bearer token in `Authorization` header
+
+`CraftAPI` includes automatic retry logic (3 attempts) with exponential backoff for rate limiting (429) and server errors (5xx).
 
 ### Key Endpoints Used
 
@@ -149,3 +154,12 @@ The prompt includes:
 - Suggested image URL from OG metadata
 - User guidance text (configurable in settings)
 - Truncated webpage content (first 100k chars)
+- URL-specific extraction hints for YouTube, Vimeo, Twitter/X, Reddit, and news sites (via `extractionHints(for:)`)
+
+### Data Sanitization
+
+`ShareViewModel.sanitizeItemData()` cleans Gemini output before sending to Craft:
+- Validates select/multiSelect values against schema options (case-insensitive matching)
+- Converts string numbers to `Double` for number fields
+- Parses natural language dates (e.g., "Oct 5, 2023") into YYYY-MM-DD format
+- Removes empty strings and null values

@@ -72,20 +72,12 @@ struct EditItemView: View {
                         }
                     }
                     
-                    // 4. Action Button
+                    // 4. Action Button - Liquid Glass style
                     Button(action: onSave) {
                         Text("Save to Craft")
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(gradient: Gradient(colors: [.blue, .purple]), startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                            .cornerRadius(16)
-                            .shadow(color: .blue.opacity(0.4), radius: 10, x: 0, y: 5)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                     .padding(.horizontal)
                     .padding(.bottom, 40)
                 }
@@ -97,10 +89,8 @@ struct EditItemView: View {
             // Close Button Top Right
             Button(action: onCancel) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.title)
-                    .foregroundColor(.secondary)
-                    .padding()
-                    .background(.ultraThinMaterial, in: Circle())
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
             }
             .padding()
             , alignment: .topTrailing

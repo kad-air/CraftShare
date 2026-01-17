@@ -89,8 +89,9 @@ class ShareViewModel: ObservableObject {
 
                 try Task.checkCancellation()
 
-                // 3. Extract OG Image
+                // 3. Extract OG metadata
                 let mainImageUrl = extractOGImage(from: pageText)
+                let ogTitle = extractOGTitle(from: pageText)
 
                 // 4. Generate Item with Gemini
                 let gemini = GeminiAPI(apiKey: credentials.geminiKey)
@@ -105,11 +106,20 @@ class ShareViewModel: ObservableObject {
 
                 try Task.checkCancellation()
 
+                // For YouTube URLs, ALWAYS use the og:title to avoid picking up recommended video titles
+                if isYouTubeURL(url), let youtubeTitle = ogTitle {
+                    itemData[contentKey] = youtubeTitle
+                }
+
                 // Safety Check: Ensure the main content key exists
                 if itemData[contentKey] == nil {
-                    let titleMatch = pageText.range(of: "<title>(.*?)</title>", options: .regularExpression)
-                    let extractedTitle = titleMatch.map { String(pageText[$0]).replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil) } ?? "Shared Link"
-                    itemData[contentKey] = extractedTitle
+                    if let ogTitle = ogTitle {
+                        itemData[contentKey] = ogTitle
+                    } else {
+                        let titleMatch = pageText.range(of: "<title>(.*?)</title>", options: .regularExpression)
+                        let extractedTitle = titleMatch.map { String(pageText[$0]).replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil) } ?? "Shared Link"
+                        itemData[contentKey] = extractedTitle
+                    }
                 }
 
                 // Switch to Edit Mode
@@ -247,6 +257,36 @@ class ShareViewModel: ObservableObject {
         }
 
         return ""
+    }
+
+    /// Extracts OG title from HTML content
+    private func extractOGTitle(from html: String) -> String? {
+        let patterns = [
+            "<meta [^>]*property=[\"']og:title[\"'] [^>]*content=[\"'](.*?)[\"']",
+            "<meta [^>]*content=[\"'](.*?)[\"'] [^>]*property=[\"']og:title[\"']"
+        ]
+
+        for pattern in patterns {
+            if let range = html.range(of: pattern, options: [.regularExpression, .caseInsensitive]) {
+                let fullMatch = String(html[range])
+                if let urlRange = fullMatch.range(of: "(?<=content=[\"'])(.*?)(?=[\"'])", options: .regularExpression) {
+                    var title = String(fullMatch[urlRange])
+                    // Remove " - YouTube" suffix if present
+                    if title.hasSuffix(" - YouTube") {
+                        title = String(title.dropLast(10))
+                    }
+                    return title.isEmpty ? nil : title
+                }
+            }
+        }
+
+        return nil
+    }
+
+    /// Checks if URL is a YouTube video URL
+    private func isYouTubeURL(_ url: URL) -> Bool {
+        let host = url.host?.lowercased() ?? ""
+        return host.contains("youtube.com") || host.contains("youtu.be")
     }
 
     /// Sanitizes item data before sending to Craft API
