@@ -8,7 +8,7 @@ struct ContentView: View {
 
     var body: some View {
         if !isOnboardingComplete {
-            OnboardingView(isOnboardingComplete: $isOnboardingComplete)
+            OnboardingView(isOnboardingComplete: $isOnboardingComplete, credentials: credentials)
         } else {
             TabView {
                 CollectionBrowserView(credentials: credentials)
@@ -69,7 +69,7 @@ private struct SettingsView: View {
                             OnboardingView(isOnboardingComplete: Binding(
                                 get: { !showOnboardingSheet },
                                 set: { _ in showOnboardingSheet = false }
-                            ))
+                            ), credentials: credentials)
                         }
 
                         // Craft Configuration Card
