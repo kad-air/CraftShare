@@ -499,22 +499,17 @@ private struct ItemEditView: View {
     }()
 
     var body: some View {
-        ZStack {
-            // 1. Liquid Background
-            MeshGradientBackground()
-                .ignoresSafeArea()
-
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    HStack {
-                        Text("Edit Item")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 20)
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                HStack {
+                    Text("Edit Item")
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 20)
 
                     // 2. Main Content Card (Title)
                     GlassCard {
@@ -574,7 +569,6 @@ private struct ItemEditView: View {
                     }
                 }
                 .padding(.vertical)
-            }
         }
         .navigationBarHidden(true)
         .overlay(
