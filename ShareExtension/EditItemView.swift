@@ -18,10 +18,10 @@ struct EditItemView: View {
     
     var body: some View {
         ZStack {
-            // 1. Liquid Background
             MeshGradientBackground()
                 .ignoresSafeArea()
-            
+
+            GlassEffectContainer {
             ScrollView {
                 VStack(spacing: 24) {
                     // Header
@@ -83,6 +83,7 @@ struct EditItemView: View {
                 }
                 .padding(.vertical)
             }
+            } // GlassEffectContainer
         }
         .navigationBarHidden(true) // We draw our own header
         .overlay(

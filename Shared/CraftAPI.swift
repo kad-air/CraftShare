@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Models
 
-struct CraftCollection: Identifiable, Codable {
+struct CraftCollection: Identifiable, Codable, Hashable {
     let id: String
     let name: String
     let itemCount: Int
@@ -202,6 +202,50 @@ class CraftAPI {
         }
 
         return itemId
+    }
+
+    func fetchItems(collectionId: String) async throws -> [[String: Any]] {
+        let encodedId = try encodeCollectionId(collectionId)
+        let request = try buildRequest(endpoint: "/collections/\(encodedId)/items?maxDepth=0")
+        let (data, _) = try await executeRequest(request)
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let items = json["items"] as? [[String: Any]] else {
+            throw APIError.decodingError("Failed to decode items response")
+        }
+
+        return items
+    }
+
+    func updateItem(collectionId: String, itemId: String, item: [String: Any], contentKey: String) async throws {
+        var craftItem: [String: Any] = ["id": itemId]
+        var properties: [String: Any] = [:]
+
+        for (key, value) in item {
+            if key == contentKey {
+                craftItem[key] = value
+            } else if key != "id" {
+                properties[key] = value
+            }
+        }
+
+        craftItem["properties"] = properties
+
+        let payload: [String: Any] = ["itemsToUpdate": [craftItem]]
+        let body = try JSONSerialization.data(withJSONObject: payload)
+
+        let encodedId = try encodeCollectionId(collectionId)
+        let request = try buildRequest(endpoint: "/collections/\(encodedId)/items", method: "PUT", body: body)
+        let _ = try await executeRequest(request)
+    }
+
+    func deleteItem(collectionId: String, itemId: String) async throws {
+        let payload: [String: Any] = ["idsToDelete": [itemId]]
+        let body = try JSONSerialization.data(withJSONObject: payload)
+
+        let encodedId = try encodeCollectionId(collectionId)
+        let request = try buildRequest(endpoint: "/collections/\(encodedId)/items", method: "DELETE", body: body)
+        let _ = try await executeRequest(request)
     }
 
     func addInitialDocumentContent(documentId: String, url: String, imageUrl: String?) async throws {

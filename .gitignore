@@ -22,3 +22,6 @@ DerivedData
 
 # macOS
 .DS_Store
+
+# API docs (contain non-public values)
+EBVzdf0Goa3-docs.md
