@@ -161,7 +161,7 @@ struct OnboardingStep<Content: View>: View {
                 .font(.system(size: 80))
                 .foregroundStyle(.tint)
                 .padding()
-                .background(.regularMaterial, in: Circle())
+                .glassEffect(.regular, in: .circle)
 
             VStack(spacing: 12) {
                 Text(title)

@@ -1,5 +1,12 @@
 import SwiftUI
 
+// MARK: - Models
+
+struct IdentifiableItem: Identifiable {
+    let id: String
+    let data: [String: Any]
+}
+
 // MARK: - View Model
 
 @MainActor
@@ -16,6 +23,15 @@ class BrowserViewModel: ObservableObject {
     @Published var editingItemId: String?
     @Published var isSaving = false
     @Published var selectedCollection: CraftCollection?
+
+    var identifiableItems: [IdentifiableItem] {
+        items.enumerated().map { index, item in
+            IdentifiableItem(
+                id: (item["id"] as? String) ?? "\(index)",
+                data: item
+            )
+        }
+    }
 
     let credentials: CredentialsManager
     private var currentTask: Task<Void, Never>?
@@ -169,6 +185,38 @@ class BrowserViewModel: ObservableObject {
         }
     }
 
+    func deleteItem(id itemId: String) {
+        guard let collection = selectedCollection else { return }
+
+        items.removeAll { ($0["id"] as? String) == itemId }
+
+        currentTask?.cancel()
+        currentTask = Task {
+            do {
+                try Task.checkCancellation()
+                try await api.deleteItem(collectionId: collection.id, itemId: itemId)
+            } catch is CancellationError {
+                // Silent cancellation
+            } catch let urlError as URLError where urlError.code == .cancelled {
+                // Silent cancellation
+            } catch {
+                self.errorMessage = error.localizedDescription
+                self.fetchItems(for: collection)
+            }
+        }
+    }
+
+    func refreshCollections() async {
+        fetchCollections()
+        await currentTask?.value
+    }
+
+    func refreshItems() async {
+        guard let collection = selectedCollection else { return }
+        fetchItems(for: collection)
+        await currentTask?.value
+    }
+
     func cancelEditing() {
         editingItem = nil
         editingItemId = nil
@@ -199,10 +247,10 @@ struct CollectionBrowserView: View {
 
     var body: some View {
         ZStack {
-            // 1. Liquid Background
             MeshGradientBackground()
                 .ignoresSafeArea()
 
+            GlassEffectContainer {
             VStack(spacing: 0) {
                 if let error = viewModel.errorMessage, viewModel.selectedCollection == nil {
                     GlassCard {
@@ -305,8 +353,12 @@ struct CollectionBrowserView: View {
                         }
                         .padding(.bottom, 20)
                     }
+                    .refreshable {
+                        await viewModel.refreshCollections()
+                    }
                 }
             }
+            } // GlassEffectContainer
         }
         .animation(.spring(), value: viewModel.isEditing)
         .animation(.spring(), value: viewModel.selectedCollection != nil)
@@ -356,19 +408,24 @@ private struct CollectionItemsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                List {
+                    Section {
                         Text(viewModel.selectedCollection?.name ?? "Items")
                             .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .padding(.horizontal)
-                            .padding(.top, 20)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 20, leading: 16, bottom: 0, trailing: 16))
 
                         Text("\(viewModel.items.count) items")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                            .padding(.horizontal)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    }
 
-                        if viewModel.items.isEmpty {
+                    if viewModel.items.isEmpty {
+                        Section {
                             GlassCard {
                                 VStack(spacing: 12) {
                                     Image(systemName: "doc.text")
@@ -379,24 +436,41 @@ private struct CollectionItemsView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-                            .padding(.horizontal)
-                        } else {
-                            ForEach(Array(viewModel.items.enumerated()), id: \.offset) { _, item in
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        }
+                    } else {
+                        Section {
+                            ForEach(viewModel.identifiableItems) { entry in
                                 Button {
-                                    viewModel.startEditing(item: item)
+                                    viewModel.startEditing(item: entry.data)
                                 } label: {
                                     ItemCardView(
-                                        item: item,
+                                        item: entry.data,
                                         contentKey: viewModel.contentKey,
                                         schema: viewModel.schema
                                     )
-                                    .padding(.horizontal)
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteItem(id: entry.id)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
                     }
-                    .padding(.bottom, 20)
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .refreshable {
+                    await viewModel.refreshItems()
                 }
             }
         }
@@ -407,7 +481,7 @@ private struct CollectionItemsView: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.secondary)
                     .padding(10)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .glassEffect(.regular, in: .circle)
             }
             .padding(),
             alignment: .topLeading
@@ -511,64 +585,64 @@ private struct ItemEditView: View {
                 .padding(.horizontal)
                 .padding(.top, 20)
 
-                    // 2. Main Content Card (Title)
+                // Main Content Card (Title)
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label(contentName.uppercased(), systemImage: "doc.text.fill")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.secondary)
+
+                        TextField("Enter \(contentName.lowercased())...", text: binding(for: contentKey))
+                            .font(.system(size: 22, weight: .semibold, design: .default))
+                            .padding(.vertical, 8)
+                    }
+                }
+
+                // Properties Card
+                if !schema.isEmpty {
                     GlassCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label(contentName.uppercased(), systemImage: "doc.text.fill")
+                        VStack(alignment: .leading, spacing: 20) {
+                            Label("PROPERTIES", systemImage: "slider.horizontal.3")
                                 .font(.caption)
                                 .fontWeight(.bold)
                                 .foregroundColor(.secondary)
 
-                            TextField("Enter \(contentName.lowercased())...", text: binding(for: contentKey))
-                                .font(.system(size: 22, weight: .semibold, design: .default))
-                                .padding(.vertical, 8)
-                        }
-                    }
+                            ForEach(schema, id: \.key) { prop in
+                                if prop.key != contentKey {
+                                    RenderLiquidControl(for: prop)
 
-                    // 3. Properties Card
-                    if !schema.isEmpty {
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 20) {
-                                Label("PROPERTIES", systemImage: "slider.horizontal.3")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.secondary)
-
-                                ForEach(schema, id: \.key) { prop in
-                                    if prop.key != contentKey {
-                                        RenderLiquidControl(for: prop)
-
-                                        if prop.key != schema.last?.key {
-                                            Divider()
-                                                .background(Color.primary.opacity(0.1))
-                                        }
+                                    if prop.key != schema.last?.key {
+                                        Divider()
+                                            .background(Color.primary.opacity(0.1))
                                     }
                                 }
                             }
                         }
                     }
-
-                    // 4. Action Button
-                    if isSaving {
-                        VStack(spacing: 24) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                            Text("Saving...")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.bottom, 40)
-                    } else {
-                        Button(action: onSave) {
-                            Text("Save Changes")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .padding(.horizontal)
-                        .padding(.bottom, 40)
-                    }
                 }
-                .padding(.vertical)
+
+                // Action Button
+                if isSaving {
+                    VStack(spacing: 24) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Saving...")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.bottom, 40)
+                } else {
+                    Button(action: onSave) {
+                        Text("Save Changes")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .padding(.horizontal)
+                    .padding(.bottom, 40)
+                }
+            }
+            .padding(.vertical)
         }
         .navigationBarHidden(true)
         .overlay(

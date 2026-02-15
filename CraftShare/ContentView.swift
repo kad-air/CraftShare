@@ -39,6 +39,7 @@ private struct SettingsView: View {
             MeshGradientBackground()
                 .ignoresSafeArea()
 
+            GlassEffectContainer {
             ScrollView {
                 HStack {
                     Spacer()
@@ -209,6 +210,7 @@ private struct SettingsView: View {
                 }
                 .padding()
             }
+            } // GlassEffectContainer
         }
     }
 }

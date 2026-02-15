@@ -16,10 +16,10 @@ struct ShareView: View {
 
     var body: some View {
         ZStack {
-            // 1. Liquid Background
             MeshGradientBackground()
                 .ignoresSafeArea()
 
+            GlassEffectContainer {
             VStack(spacing: 0) {
                 if let error = viewModel.errorMessage {
                     GlassCard {
@@ -99,6 +99,7 @@ struct ShareView: View {
                     }
                 }
             }
+            } // GlassEffectContainer
         }
         .animation(.spring(), value: viewModel.isEditing)
         .animation(.spring(), value: viewModel.selectedCollection != nil)
@@ -110,7 +111,7 @@ struct ShareView: View {
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.secondary)
                             .padding(10)
-                            .background(.ultraThinMaterial, in: Circle())
+                            .glassEffect(.regular, in: .circle)
                     }
                     .padding()
                 }

@@ -10,24 +10,18 @@ import UIKit
 
 // MARK: - Glass Effect Modifier
 
-/// A view modifier that applies iOS 26 glass effect, or falls back to material background on older versions.
+/// A view modifier that applies iOS 26 Liquid Glass effect.
 struct GlassContainerModifier: ViewModifier {
     var cornerRadius: CGFloat = 20
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-        } else {
-            content
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        }
+        content
+            .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
     }
 }
 
 extension View {
-    /// Applies glass container styling - uses .glassEffect() on iOS 26+, material background on older versions.
+    /// Applies Liquid Glass container styling.
     func glassContainer(cornerRadius: CGFloat = 20) -> some View {
         modifier(GlassContainerModifier(cornerRadius: cornerRadius))
     }
